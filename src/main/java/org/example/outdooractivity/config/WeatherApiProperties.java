@@ -8,4 +8,8 @@ public record WeatherApiProperties(
         String baseUrl,
         int forecastDays
 ) {
+
+
+
+
 }
