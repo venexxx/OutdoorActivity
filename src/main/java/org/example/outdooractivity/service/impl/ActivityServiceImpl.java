@@ -37,6 +37,7 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     public List<DayHoursResponse> getAvailableBadmintonIntervals(String location) {
+
         WeatherApiForecastResponse response = weatherApiService.getForecast(location);
 
         if (response == null || response.forecast() == null || response.forecast().forecastday() == null) {
@@ -48,7 +49,11 @@ public class ActivityServiceImpl implements ActivityService {
         for (ForecastDayDto forecastDay : response.forecast().forecastday()) {
             List<Integer> validHours = new ArrayList<>();
 
+
             LocalDate date = LocalDate.parse(forecastDay.date());
+
+            boolean isWeekend = isWeekend(date);
+            boolean hasPreferredCloud = false;
             LocalDateTime sunrise = LocalDateTime.parse(
                     forecastDay.date() + " " + forecastDay.astro().sunrise(),
                     SUN_TIME_FORMAT
@@ -69,12 +74,21 @@ public class ActivityServiceImpl implements ActivityService {
                 if (isDaylight && isTempOk && isWindOk && isRainOk) {
                     validHours.add(hourDateTime.getHour());
                 }
+
+                if (isDaylight && isTempOk && isWindOk && isRainOk) {
+                    validHours.add(hourDateTime.getHour());
+
+                    if (hour.cloud() > 50) {
+                        hasPreferredCloud = true;
+                    }
+                }
             }
 
             List<String> intervals = buildIntervals(validHours);
 
             if (!intervals.isEmpty()) {
-                result.add(new DayHoursResponse(date.toString(), intervals));
+                boolean preferred = isWeekend || hasPreferredCloud;
+                result.add(new DayHoursResponse(date.toString(), intervals, preferred));
             }
         }
 
@@ -114,5 +128,10 @@ public class ActivityServiceImpl implements ActivityService {
         if (endExclusive - start >= MIN_CONSECUTIVE_HOURS) {
             intervals.add(String.format("%02d-%02d", start, endExclusive));
         }
+    }
+
+    private boolean isWeekend(LocalDate date) {
+        return date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY
+                || date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY;
     }
 }

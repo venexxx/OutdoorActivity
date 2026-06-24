@@ -5,6 +5,7 @@ import java.util.List;
 public record DayHoursResponse(
 
         String date,
-        List<String> hours
+        List<String> hours,
+        boolean preferred
 ) {
 }
